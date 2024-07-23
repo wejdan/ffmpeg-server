@@ -7,9 +7,12 @@ const m3u8Parser = require("m3u8-parser");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
 const WebSocket = require("ws");
+require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const WEBSOCKET_URL = process.env.WEBSOCKET_URL;
+const BASE_URL = process.env.BASE_URL;
 let clients = {};
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
@@ -20,15 +23,6 @@ app.use("/downloads", express.static(path.join(__dirname, "downloads")));
 // Define a simple route
 app.get("/", (req, res) => {
   res.send("Hello, World!");
-});
-
-// WebSocket server
-const wss = new WebSocket.Server({ noServer: true });
-app.server = require("http").createServer(app);
-app.server.on("upgrade", (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit("connection", ws, request);
-  });
 });
 
 // Define a route to handle remuxing
@@ -53,7 +47,7 @@ app.post("/remux", async (req, res, next) => {
         .send({ error: "Requested quality not found in the master playlist" });
     }
     // Create a WebSocket for this request
-    const ws = new WebSocket("ws://localhost:3000");
+    const ws = new WebSocket(WEBSOCKET_URL);
 
     ws.on("open", async () => {
       // Create a worker thread for remuxing
@@ -75,7 +69,7 @@ app.post("/remux", async (req, res, next) => {
           }
         } else if (message.mp4Path) {
           const relativePath = path.relative(__dirname, message.mp4Path);
-          const urlPath = `http://localhost:${PORT}/${relativePath
+          const urlPath = `${BASE_URL}/${relativePath
             .split(path.sep)
             .join("/")}`;
           console.log("urlPath", urlPath);
@@ -172,16 +166,21 @@ app.use((err, req, res, next) => {
   res.status(500).send({ error: err.message });
 });
 // Start the server
-app.server.listen(PORT, () => {
-  console.log(`Server is running and listening on port ${PORT}`);
-  wss.on("connection", (ws, request) => {
-    const urlParams = new URLSearchParams(request.url.slice(1));
-    const videoId = urlParams.get("videoId");
-    if (videoId) {
-      clients[videoId] = ws;
-      ws.on("close", () => {
-        delete clients[videoId];
-      });
-    }
-  });
+
+// Start the server and attach the WebSocket server to it
+const server = app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+const wss = new WebSocket.Server({ server });
+
+wss.on("connection", (ws, req) => {
+  const urlParams = new URLSearchParams(req.url.slice(1));
+  const videoId = urlParams.get("videoId");
+  if (videoId) {
+    clients[videoId] = ws;
+    ws.on("close", () => {
+      delete clients[videoId];
+    });
+  }
 });

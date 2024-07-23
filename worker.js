@@ -1,9 +1,16 @@
 const { workerData, parentPort } = require("worker_threads");
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
+require("dotenv").config();
 
 // Set the path to the ffmpeg binary if necessary
-ffmpeg.setFfmpegPath("C:\\ffmpeg\\bin\\ffmpeg.exe");
+const ffmpegPath = process.env.FFMPEG_PATH;
+if (ffmpegPath) {
+  ffmpeg.setFfmpegPath(ffmpegPath);
+}
+
+// Set the path to the ffmpeg binary if necessary
+//ffmpeg.setFfmpegPath("C:\\ffmpeg\\bin\\ffmpeg.exe");
 
 const { videoUrl, audioUrl, outputPath } = workerData;
 console.log("workerData", workerData);
@@ -22,7 +29,7 @@ async function remuxHLS(videoUrl, audioUrl, outputMp4Path) {
       .outputOptions("-c copy")
       .output(outputMp4Path)
       .on("start", (commandLine) => {
-        console.log("Spawned Ffmpeg with command: " + commandLine);
+        console.log("Spawned Ffpeg with command: " + commandLine);
       })
       .on("progress", (progress) => {
         console.log(`Progress: ${progress.percent}% done`);
