@@ -1,18 +1,14 @@
 const { workerData, parentPort } = require("worker_threads");
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
-require("dotenv").config();
 
 // Set the path to the ffmpeg binary if necessary
-const ffmpegPath = process.env.FFMPEG_PATH;
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
+if (process.env.FFMPEG_PATH) {
+  ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
 }
 
-// Set the path to the ffmpeg binary if necessary
-//ffmpeg.setFfmpegPath("C:\\ffmpeg\\bin\\ffmpeg.exe");
-
 const { videoUrl, audioUrl, outputPath } = workerData;
+
 console.log("workerData", workerData);
 
 async function remuxHLS(videoUrl, audioUrl, outputMp4Path) {
@@ -29,7 +25,7 @@ async function remuxHLS(videoUrl, audioUrl, outputMp4Path) {
       .outputOptions("-c copy")
       .output(outputMp4Path)
       .on("start", (commandLine) => {
-        console.log("Spawned Ffpeg with command: " + commandLine);
+        console.log("Spawned Ffmpeg with command: " + commandLine);
       })
       .on("progress", (progress) => {
         console.log(`Progress: ${progress.percent}% done`);
@@ -39,9 +35,14 @@ async function remuxHLS(videoUrl, audioUrl, outputMp4Path) {
         console.log("MP4 file created at:", outputMp4Path);
         resolve(outputMp4Path);
       })
-      .on("error", (err) => {
-        console.error("Error processing HLS:", err);
+      .on("error", (err, stdout, stderr) => {
+        console.error("Error processing HLS:", err.message);
+        console.error("ffmpeg stdout:", stdout);
+        console.error("ffmpeg stderr:", stderr);
         reject(new Error("Failed to process HLS"));
+      })
+      .on("stderr", (stderrLine) => {
+        console.error("ffmpeg stderr:", stderrLine);
       })
       .run();
   });
