@@ -37,8 +37,7 @@ async function remuxHLS(videoUrl, audioUrl, outputMp4Path) {
       })
       .on("error", (err, stdout, stderr) => {
         console.error("Error processing HLS:", err.message);
-        console.error("ffmpeg stdout:", stdout);
-        console.error("ffmpeg stderr:", stderr);
+
         reject(new Error("Failed to process bx"));
       })
       .on("stderr", (stderrLine) => {
