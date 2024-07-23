@@ -17,6 +17,11 @@ let clients = {};
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
 
+const downloadsDir = path.join(__dirname, "downloads");
+if (!fs.existsSync(downloadsDir)) {
+  fs.mkdirSync(downloadsDir, { recursive: true });
+}
+
 // Serve the downloaded files statically
 app.use("/downloads", express.static(path.join(__dirname, "downloads")));
 
