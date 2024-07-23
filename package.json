@@ -1,0 +1,23 @@
+{
+  "name": "ffmpgserver",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "worker": "node worker.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "bull": "^4.15.1",
+    "express": "^4.19.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "ioredis": "^5.4.1",
+    "m3u8-parser": "^7.1.0",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
+  }
+}
